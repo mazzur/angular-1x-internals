@@ -2,12 +2,12 @@ module.exports = function (config) {
     config.set({
         frameworks: ['browserify', 'jasmine'],
         files: [
+            'node_modules/babel-polyfill/browser.js',
             'src/**/*.js'
         ],
         exclude: [],
         preprocessors: {
-            'src/**/*[!.spec].js': ['browserify'],
-            'src/**/*.spec.js': ['browserify']
+            'src/**/*.js': ['browserify']
         },
         browserify: {
             debug: true,
@@ -17,8 +17,7 @@ module.exports = function (config) {
             }), 'babelify']
         },
         reporters: ['progress', 'coverage'],
-        autoWatch: false,
-        singleRun: true,
+        autoWatch: true,
         browsers: ['PhantomJS'],
         coverageReporter: {
             reporters: [

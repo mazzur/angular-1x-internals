@@ -10,8 +10,8 @@ const paths = {
     dest: './compiled'
 };
 
-gulp.task('default', ['compile'], () => {
-    gulp.watch(paths.src, ['compile']);
+gulp.task('default', ['browserify'], () => {
+    gulp.watch(paths.src, ['browserify']);
 });
 
 // does not work in a browser

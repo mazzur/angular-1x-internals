@@ -1,6 +1,7 @@
 rules:
   indent:
     - 2
+    - 4
   quotes:
     - 2
     - single
@@ -10,8 +11,23 @@ rules:
   semi:
     - 2
     - always
+  no-param-reassign:
+    - 2
+    - props: false
+  comma-dangle:
+    - 2
+    - 'never'
+  object-curly-spacing:
+    - 0
+  max-len:
+    - 2
+    - 140
 env:
   es6: true
   node: true
   browser: true
-extends: 'eslint:recommended'
+  jasmine: true
+parserOptions:
+  ecmaVersion: 6
+  sourceType: 'module'
+extends: 'airbnb'
