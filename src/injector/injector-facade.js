@@ -59,7 +59,7 @@ export default class InjectorFacade {
                 return;
             }
             loadedModules.set(moduleName, true);
-            
+
             if (_.isString(moduleName)) {
                 const module = injector.loader.module(moduleName);
                 _.each(module.requires, loadModule);

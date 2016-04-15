@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-export default class ProvideService{
+export default class ProvideService {
     constructor(cache, providerInjector, instanceInjector) {
         this.cache = cache;
         this.providerInjector = providerInjector;
