@@ -124,19 +124,19 @@ export default class RootScope {
 
     $$digestIteration() {
         return _.reduce(this.$$watchers, (isDirty, {watcher, listener, deepEquality}) => {
-                try {
-                    const newValue = watcher(this);
-                    if (!RootScope.$$areEqual(watcher.prevValue, newValue, deepEquality)) {
-                        listener(newValue, watcher.prevValue === initialValue ? newValue : watcher.prevValue, this);
-                        watcher.prevValue = deepEquality ? _.cloneDeep(newValue) : newValue;
-                        return true;
-                    }
-                    return false;
-                } catch (e) {
-                    logger(e);
-                    return false;
+            try {
+                const newValue = watcher(this);
+                if (!RootScope.$$areEqual(watcher.prevValue, newValue, deepEquality)) {
+                    listener(newValue, watcher.prevValue === initialValue ? newValue : watcher.prevValue, this);
+                    watcher.prevValue = deepEquality ? _.cloneDeep(newValue) : newValue;
+                    return true;
                 }
-            }, false, this) || _.some(this.$$children, (childScope) => childScope.$$digestIteration());
+                return false;
+            } catch (e) {
+                logger(e);
+                return false;
+            }
+        }, false, this) || _.some(this.$$children, (childScope) => childScope.$$digestIteration());
     }
 
     $$reduceEvalAsyncQueue() {

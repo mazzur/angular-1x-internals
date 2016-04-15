@@ -21,12 +21,14 @@
     "gulp-concat": "^2.6.0",
     "isparta": "^4.0.0",
     "jasmine": "^2.4.1",
+    "karma-chrome-launcher": "^0.2.3",
     "karma-coverage": "^0.5.5",
     "karma-jasmine": "^0.3.8",
     "karma-phantomjs-launcher": "^1.0.0",
     "karma-sourcemap-loader": "^0.3.7"
   },
   "dependencies": {
+    "jquery": "^2.2.3",
     "lodash": "^4.10.0"
   }
 }

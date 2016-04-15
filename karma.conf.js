@@ -11,14 +11,16 @@ module.exports = function (config) {
         },
         browserify: {
             debug: true,
-            transform: [require('browserify-istanbul')({
-                instrumenter: require('isparta'),
-                ignore: ['**/*.spec.js']
-            }), 'babelify']
+            transform: [
+            //     require('browserify-istanbul')({
+            //     instrumenter: require('isparta'),
+            //     ignore: ['**/*.spec.js']
+            // }),
+                'babelify']
         },
         reporters: ['progress', 'coverage'],
         autoWatch: true,
-        browsers: ['PhantomJS'],
+        browsers: ['Chrome'],
         coverageReporter: {
             reporters: [
                 {

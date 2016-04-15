@@ -22,6 +22,10 @@ rules:
   max-len:
     - 2
     - 140
+  line-break-style:
+    - 0
+  no-use-before-define:
+    - 0
 env:
   es6: true
   node: true
