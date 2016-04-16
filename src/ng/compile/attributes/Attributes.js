@@ -4,7 +4,7 @@ import _ from 'lodash';
 export default class Attributes {
     constructor($rootScope, element) {
         this.$$element = element;
-        this.$attr = {};
+        this.$attrMap = {};
 
         this._rootScope = $rootScope;
     }
@@ -17,15 +17,15 @@ export default class Attributes {
         }
 
         if (!attrName) {
-            if (this.$attr[key]) {
-                attrName = this.$attr[key];
+            if (this.$attrMap[key]) {
+                attrName = this.$attrMap[key];
             }
             else {
-                attrName = this.$attr[key] = _.kebabCase(key, '-');
+                attrName = this.$attrMap[key] = _.kebabCase(key, '-');
             }
         }
         else {
-            this.$attr[key] = attrName;
+            this.$attrMap[key] = attrName;
         }
 
         if (writeAttr !== false) {

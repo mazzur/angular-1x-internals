@@ -4,6 +4,12 @@ import $CompileProvider from '../compile-provider';
 import Scope from '../../../scope/scope';
 import $ from 'jquery';
 
+/**
+ * TODO
+ * observer removal
+ * add/remove class
+ */
+
 describe('compile provider', () => {
     let module;
     let loader;

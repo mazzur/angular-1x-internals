@@ -81,6 +81,10 @@ export default class Compiler {
                 childNodesCompositeLinkFn = compiler.$$compileNodes(node.childNodes);
             }
 
+            if (nodeLinkFn && nodeLinkFn.ownScopeRequired) {
+                attrs.$$element.addClass('ng-scope');
+            }
+
             if (nodeLinkFn || childNodesCompositeLinkFn) {
                 linkFnObjects.push({
                     nodeLinkFn,
@@ -98,10 +102,17 @@ export default class Compiler {
             });
 
             _.forEach(linkFnObjects, ({nodeLinkFn, childNodesCompositeLinkFn, idx}) => {
+                let nodeScope = scope;
+                const node = stableLinkNodes[idx];
+
                 if (nodeLinkFn) {
-                    nodeLinkFn(childNodesCompositeLinkFn, scope, stableLinkNodes[idx]);
+                    if (nodeLinkFn.ownScopeRequired) {
+                        nodeScope = scope.$new();
+                        $(node).data('$scope', nodeScope);
+                    }
+                    nodeLinkFn(childNodesCompositeLinkFn, nodeScope, node);
                 } else {
-                    childNodesCompositeLinkFn(scope, stableLinkNodes[idx].children);
+                    childNodesCompositeLinkFn(scope, node.children);
                 }
             });
         }
@@ -184,36 +195,57 @@ export default class Compiler {
         let $compileNode = $(node);
         const preLinkFns = [];
         const postLinkFns = [];
+        let isolatedDirective;
+        let nodeHasInheritedScope;
 
         _.forEach(directives, directive => {
             const directiveStart = directive.$$start;
             const directiveEnd = directive.$$end;
+            let isolate = false;
 
             if (directive.$$start) {
                 $compileNode = Compiler.groupScan(node, directive.$$start, directive.$$end);
+            }
+
+            if (_.isObject(directive.scope)) {
+                if (isolatedDirective || nodeHasInheritedScope) {
+                    throw new Error('Multiple directives asking for new/inherited scope');
+                }
+                isolate = true;
+                isolatedDirective = directive;
+            }
+
+            if (directive.scope === true) {
+                if (isolatedDirective) {
+                    throw new Error('Multiple directives asking for new/inherited scope');
+                }
+                nodeHasInheritedScope = true;
+                nodeLinkFn.ownScopeRequired = true;
             }
 
             if (directive.compile) {
                 const linkFn = directive.compile($compileNode, attrs);
 
                 if (_.isFunction(linkFn)) {
-                    pushLinkFns(null, linkFn, directiveStart, directiveEnd);
+                    pushLinkFns(null, linkFn, directiveStart, directiveEnd, isolate);
                 } else if (_.isObject(linkFn)) {
-                    pushLinkFns(linkFn.pre, linkFn.post, directiveStart, directiveEnd);
+                    pushLinkFns(linkFn.pre, linkFn.post, directiveStart, directiveEnd, isolate);
                 }
             }
         });
 
-        function pushLinkFns(preFn, postFn, directiveStart, directiveEnd) {
+        function pushLinkFns(preFn, postFn, directiveStart, directiveEnd, isolateScope) {
             let pre = preFn;
             let post = postFn;
             if (post) {
+                post.isolateScope = isolateScope;
                 if (directiveStart) {
                     post = Compiler.groupElementsLinkFnWrapper(post, directiveStart, directiveEnd);
                 }
                 postLinkFns.push(post);
             }
             if (pre) {
+                pre.isolateScope = isolateScope;
                 if (directiveStart) {
                     pre = Compiler.groupElementsLinkFnWrapper(pre, directiveStart, directiveEnd);
                 }
@@ -222,6 +254,23 @@ export default class Compiler {
         }
 
         function nodeLinkFn(childNodesCompositeLinkFn, scope, nodeToBeLinked) {
+            let isolatedScope;
+            const $nodeToBeLinked = $(nodeToBeLinked);
+            if (isolatedDirective) {
+                isolatedScope = scope.$new(true);
+                $nodeToBeLinked.addClass('ng-isolated-scope');
+                $nodeToBeLinked.data('$isolatedScope', isolatedScope);
+                _.forEach(isolatedDirective.$$isolateBindings, (definition, name) => {
+                    switch (definition.mode) {
+                        case '@':
+                            attrs.$observe(name, (newValue) => {
+                                isolatedScope[name] = newValue;
+                            });
+                            break;
+                    }
+                });
+            }
+
             _.forEach(preLinkFns, link);
 
             if (childNodesCompositeLinkFn) {
@@ -231,7 +280,7 @@ export default class Compiler {
             _.forEach(postLinkFns, link);
 
             function link(linkFn) {
-                linkFn(scope, $(nodeToBeLinked), attrs);
+                linkFn(linkFn.isolateScope ? isolatedScope : scope, $nodeToBeLinked, attrs);
             }
         }
 

@@ -2,6 +2,14 @@ import _ from 'lodash';
 import Compiler from './compiler';
 
 export default class CompileProvider {
+    static parseIsolateBindings(scope) {
+        return _.transform(scope, (bindings, token, name) => {
+            bindings[name] = {
+                mode: token
+            };
+        }, {});
+    }
+
     constructor($provide) {
         this.$provide = $provide;
         this.directivesCache = {};
@@ -31,6 +39,10 @@ export default class CompileProvider {
 
                     if (directiveDO.link && !directiveDO.compile) {
                         directiveDO.compile = () => directiveDO.link;
+                    }
+
+                    if (_.isObject(directiveDO.scope)) {
+                        directiveDO.$$isolateBindings = CompileProvider.parseIsolateBindings(directiveDO.scope);
                     }
 
                     return directiveDO;
