@@ -525,21 +525,19 @@ describe('compile provider', () => {
         });
 
         it('calls directive link function with scope', () => {
-            let givenScope, givenElement, givenAttrs;
-            let injector = makeInjectorWithDirectives('myDirective', () => {
-                return {
-                    compile: () => {
-                        return function link(scope, element, attrs) {
-                            givenScope = scope;
-                            givenElement = element;
-                            givenAttrs = attrs;
-                        };
-                    }
-                };
-            });
+            let givenScope;
+            let givenElement;
+            let givenAttrs;
+            const injector = makeInjectorWithDirectives('myDirective', () => ({
+                compile: () => function link(scope, element, attrs) {
+                    givenScope = scope;
+                    givenElement = element;
+                    givenAttrs = attrs;
+                }
+            }));
 
             injector.invoke(($compile, $rootScope) => {
-                let el = $('<div my-directive></div>');
+                const el = $('<div my-directive></div>');
                 $compile(el)($rootScope);
 
                 expect(givenScope).toBe($rootScope);
@@ -573,8 +571,8 @@ describe('compile provider', () => {
         });
 
         it('links directives on child elements first', () => {
-            let givenElements = [];
-            let injector = makeInjectorWithDirectives('myDirective', () => {
+            const givenElements = [];
+            const injector = makeInjectorWithDirectives('myDirective', () => {
                 return {
                     link: (scope, element) => {
                         givenElements.push(element);
@@ -583,12 +581,106 @@ describe('compile provider', () => {
             });
 
             injector.invoke(($compile, $rootScope) => {
-                let el = $('<div my-directive><div my-directive></div></div>');
+                const el = $('<div my-directive><div my-directive></div></div>');
                 $compile(el)($rootScope);
 
                 expect(givenElements.length).toBe(2);
                 expect(givenElements[0][0]).toBe(el[0].firstChild);
                 expect(givenElements[1][0]).toBe(el[0]);
+            });
+        });
+
+        it('links children when parent has no directives', () => {
+            const givenElements = [];
+            const injector = makeInjectorWithDirectives('myDirective', () => ({
+                link: (scope, element) => {
+                    debugger;
+
+                    givenElements.push(element);
+                }
+            }));
+            injector.invoke(($compile, $rootScope) => {
+                const el = $('<div><div my-directive></div></div>');
+                $compile(el)($rootScope);
+                expect(givenElements.length).toBe(1);
+                expect(givenElements[0][0]).toBe(el[0].firstChild);
+            });
+        });
+
+        it('supports link function objects with post link fn', () => {
+            let linked;
+            const injector = makeInjectorWithDirectives('myDirective', () => ({
+                link: {
+                    post: () => {
+                        linked = true;
+                    }
+                }
+            }));
+            injector.invoke(($compile, $rootScope) => {
+                const el = $('<div><div my-directive></div></div>');
+                $compile(el)($rootScope);
+                expect(linked).toBe(true);
+            });
+        });
+
+        it('starts with pre-link fn prior to post link fn', () => {
+            const linkCalls = [];
+            const injector = makeInjectorWithDirectives('myDirective', () => ({
+                link: {
+                    pre: (scope, el) => {
+                        linkCalls.push(['pre', el[0]]);
+                    },
+                    post: (scope, el) => {
+                        linkCalls.push(['post', el[0]]);
+                    }
+                }
+            }));
+
+            injector.invoke(($compile, $rootScope) => {
+                const el = $('<div ng-attr-my-directive><div my-directive></div></div>');
+                $compile(el)($rootScope);
+                expect(linkCalls.length).toBe(4);
+                expect(linkCalls[0]).toEqual(['pre', el[0]]);
+                expect(linkCalls[1]).toEqual(['pre', el[0].firstChild]);
+                expect(linkCalls[2]).toEqual(['post', el[0].firstChild]);
+                expect(linkCalls[3]).toEqual(['post', el[0]]);
+            });
+        });
+
+        it('stabilizes node list during linking', () => {
+            const givenElements = [];
+            const injector = makeInjectorWithDirectives('myDirective', () => ({
+                link: (scope, element) => {
+                    givenElements.push(element[0]);
+                    element.after('<div></div>');
+                }
+            }));
+            injector.invoke(($compile, $rootScope) => {
+                const el = $('<div><div my-directive></div><div my-directive></div></div>');
+                const el1 = el[0].childNodes[0];
+                const el2 = el[0].childNodes[1];
+                $compile(el)($rootScope);
+                expect(givenElements.length).toBe(2);
+                expect(givenElements[0]).toBe(el1);
+                expect(givenElements[1]).toBe(el2);
+            });
+        });
+
+        it('invokes multi-element directive link functions with whole group', () => {
+            let givenElements;
+            const injector = makeInjectorWithDirectives('myDirective', () => ({
+                multiElement: true,
+                link: (scope, element) => {
+                    debugger;
+                    givenElements = element;
+                }
+            }));
+            injector.invoke(($compile, $rootScope) => {
+                const el = $(
+                    '<div my-directive-start></div><p></p><div my-directive-end></div>'
+                );
+                $compile(el)($rootScope);
+                expect(givenElements.length).toBe(3);
             });
         });
     });

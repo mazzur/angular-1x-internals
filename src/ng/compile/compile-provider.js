@@ -4,7 +4,7 @@ import Compiler from './compiler';
 export default class CompileProvider {
     constructor($provide) {
         this.$provide = $provide;
-        this.directivesStore = {};
+        this.directivesCache = {};
     }
 
     directive(key, factory) {
@@ -20,17 +20,17 @@ export default class CompileProvider {
             throw new Error('hasOwnProperty is not a valid directive name');
         }
 
-        if (!this.directivesStore.hasOwnProperty(name)) {
-            this.directivesStore[name] = [];
+        if (!this.directivesCache.hasOwnProperty(name)) {
+            this.directivesCache[name] = [];
 
             this.$provide.factory(`${name}Directive`, [
                 '$injector',
-                $injector => _.map(this.directivesStore[name], singleDirectiveFactory => {
+                $injector => _.map(this.directivesCache[name], singleDirectiveFactory => {
                     const directiveDO = $injector.invoke(singleDirectiveFactory);
                     directiveDO.restrict = directiveDO.restrict || 'EA';
 
                     if (directiveDO.link && !directiveDO.compile) {
-                        directiveDO.compile = _.constant(directiveDO.link);
+                        directiveDO.compile = () => directiveDO.link;
                     }
 
                     return directiveDO;
@@ -38,7 +38,7 @@ export default class CompileProvider {
             ]);
         }
 
-        this.directivesStore[name].push(directiveFactory);
+        this.directivesCache[name].push(directiveFactory);
     }
 
     $$registerDirectivesObject(directivesObject) {
@@ -48,7 +48,7 @@ export default class CompileProvider {
     }
 
     $get($injector) {
-        const compiler = new Compiler($injector, this.directivesStore);
+        const compiler = new Compiler($injector, this.directivesCache);
         return compiler.compile.bind(compiler);
     }
 }
